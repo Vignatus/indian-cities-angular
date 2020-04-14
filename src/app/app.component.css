@@ -39,6 +39,10 @@ mat-form-field {
 }
 .col-content {
     padding-left: 20px;
-    max-height: 600px;
+    height: 700px;
     overflow-y: scroll;
+}
+#map {
+    width: 100%;
+    padding-left: 0px;
 }
