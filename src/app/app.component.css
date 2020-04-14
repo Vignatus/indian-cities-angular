@@ -5,4 +5,40 @@
     box-sizing: border-box;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    display: block;
+}
+header {
+    width: 100%;
+    margin: 40px 0;
+}
+header h1 {
+    margin: auto;
+    width: fit-content;
+}
+.form-wrapper {
+    width: 100%;
+}
+mat-form-field {
+    margin: auto;
+    display: block;
+    max-width: 400px;
+}
+.row {
+    margin: 30px 0;
+}
+.col-md-12, .col-lg-6 {
+    padding: 0;
+}
+.col-header {
+    background-color: rgba(0,0,0,0.1);
+    padding: 14px 20px;
+    font-weight: 700;
+}
+.row li {
+    padding: 14px 0;
+}
+.col-content {
+    padding-left: 20px;
+    max-height: 600px;
+    overflow-y: scroll;
 }

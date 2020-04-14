@@ -1,9 +1,24 @@
-<h1>Mapping Indian Cities</h1>
-<mat-form-field>
-    <mat-label>State</mat-label>
-    <mat-select>
-      <mat-option *ngFor="let state of states" [value]="state">
-        {{state}}
-      </mat-option>
-    </mat-select>
-</mat-form-field>
+<header>
+    <h1>Mapping Indian Cities</h1>
+</header>
+<div class="form-wrapper">
+    <mat-form-field>
+        <mat-label>State</mat-label>
+        <mat-select name="stateSelected" [(ngModel)]="stateSelected">
+        <mat-option *ngFor="let state of states" [value]="state">
+            {{state}}
+        </mat-option>
+        </mat-select>
+    </mat-form-field>
+</div>
+<div class="row">
+    <div class="col-md-12 col-lg-6">
+        <div class="col-header">Cities</div>
+        <ul class="col-content">
+            <li *ngFor="let city of stateCityMapping[stateSelected]">{{city.City}}</li>
+        </ul>
+    </div>
+    <div class="col-md-12 col-lg-6">
+        <div class="col-header">Map</div>
+    </div>
+</div>

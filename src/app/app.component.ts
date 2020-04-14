@@ -12,7 +12,7 @@ export class AppComponent implements OnInit{
 //   title = 'india-cities-angular';
 private cityPromise: Promise<CityModel[]>;
 // cities: CityModel[];
-private stateCityMapping: {
+stateCityMapping: {
     [key: string]: CityModel[];
 };
 states: string[];
@@ -42,6 +42,7 @@ async initialSetup() {
         this.stateCityMapping[city.State].push(city);
     }
     this.states = Object.keys(this.stateCityMapping).sort();
+    cities.length = 0;
 }
 
 }

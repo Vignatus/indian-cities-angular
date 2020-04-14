@@ -2,4 +2,8 @@
 @import '~bootstrap/dist/css/bootstrap.css';
 
 html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+body { padding: 30px 24px; font-family: Roboto, "Helvetica Neue", sans-serif; }
+ul, ol {
+    list-style-type: none;
+    padding-inline-start: 0;
+}
