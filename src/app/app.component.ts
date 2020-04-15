@@ -5,6 +5,11 @@ import {} from 'googlemaps';
 import * as _ from 'lodash';
 import { environment } from 'src/environments/environment';
 
+declare interface MarkerBound {
+    marker: google.maps.Marker;
+    zoomBound: google.maps.LatLngBounds;
+}
+
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -19,7 +24,9 @@ export class AppComponent implements OnInit{
     stateSelected: string;
     @ViewChild('map') mapElement: any;
     map: google.maps.Map;
-    private markers: google.maps.Marker[];
+    private markerBounds: MarkerBound[];
+    private zoomBound: google.maps.LatLngBounds;
+    private defaultZoomBound: google.maps.LatLngBounds;
 
     constructor(
         public apiService: APIService
@@ -30,7 +37,7 @@ export class AppComponent implements OnInit{
     ngOnInit():void {
         this.cityPromise = this.apiService.getCities().toPromise();
         this.initialSetup();
-        this.markers = [];
+        this.markerBounds = [];
     }
 
     async initialSetup() {
@@ -59,11 +66,17 @@ export class AppComponent implements OnInit{
             streetViewControl: false,
         }
         this.map = new google.maps.Map(this.mapElement.nativeElement, mapProperties);
+        google.maps.event.addListenerOnce(this.map, 'idle', ()=>{
+            debugger;
+            this.defaultZoomBound = this.map.getBounds();
+            this.zoomBound = this.defaultZoomBound;
+        })
     }
 
     public async onStateSelection() {
-        // console.log("State selected: " + this.stateSelected);
+        debugger;
         this.clearMarkers();
+        this.map.fitBounds(this.defaultZoomBound);
         let state = this.stateSelected;
         let cities = this.stateCityMapping[this.stateSelected].slice(0,5);
         console.log(cities);
@@ -73,18 +86,11 @@ export class AppComponent implements OnInit{
             if (city.geometry) {
                 this.dropMarkerOnMap(city.geometry, city.City);
             } else {
-                this.asyncDropMarkerOnMap(city, state);
+                if (state == this.stateSelected) await this.asyncDropMarkerOnMap(city, state);
             }
         }
-    }
 
-    private dropMarkerOnMap(geometry: google.maps.GeocoderGeometry, title: string) {
-        this.markers.push(new google.maps.Marker({
-            title: title,
-            position: geometry.location.toJSON(),
-            map: this.map,
-            animation: google.maps.Animation.DROP
-        }))
+        if (state == this.stateSelected) this.recaliberateZoom();
     }
 
     private async asyncDropMarkerOnMap(city: CityModel, state: string) {
@@ -101,6 +107,34 @@ export class AppComponent implements OnInit{
         }
         city.geometry = result;
         if (state == this.stateSelected) this.dropMarkerOnMap(result, city.City);
+    }
+
+    private dropMarkerOnMap(geometry: google.maps.GeocoderGeometry, title: string) {
+        let marker = new google.maps.Marker({
+            title: title,
+            position: geometry.location.toJSON(),
+            map: this.map,
+            animation: google.maps.Animation.DROP
+        });
+        let markerBound:MarkerBound = {
+            marker: marker,
+            zoomBound: geometry.viewport
+        }
+        this.markerBounds.push(markerBound);
+    }
+
+    private recaliberateZoom() {
+        for (let i=0; i<this.markerBounds.length; i++) {
+            let markerBound = this.markerBounds[i];
+            if (i==0) {
+                this.zoomBound = markerBound.zoomBound;
+                continue;
+
+            }
+            this.zoomBound.extend(markerBound.zoomBound.getSouthWest());
+            this.zoomBound.extend(markerBound.zoomBound.getNorthEast());
+        }
+        this.map.fitBounds(this.zoomBound);
     }
     // private drop() {
     //     this.clearMarkers();
@@ -119,11 +153,10 @@ export class AppComponent implements OnInit{
     //         }));
     //     }, timeout);
     // }
-
     private clearMarkers() {
-        for (var i = 0; i < this.markers.length; i++) {
-          this.markers[i].setMap(null);
+        for (var i = 0; i < this.markerBounds.length; i++) {
+          this.markerBounds[i].marker.setMap(null);
         }
-        this.markers = [];
+        this.markerBounds = [];
     }
 }
