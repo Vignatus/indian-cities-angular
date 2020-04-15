@@ -4,7 +4,7 @@
 <div class="form-wrapper">
     <mat-form-field>
         <mat-label>State</mat-label>
-        <mat-select name="stateSelected" [(ngModel)]="stateSelected">
+        <mat-select name="stateSelected" [(ngModel)]="stateSelected" (ngModelChange)="onStateSelection()">
         <mat-option *ngFor="let state of states" [value]="state">
             {{state}}
         </mat-option>

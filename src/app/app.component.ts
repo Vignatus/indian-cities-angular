@@ -3,6 +3,7 @@ import { APIService } from './services/api.service';
 import { CityModel } from './models/cities.model';
 import {} from 'googlemaps';
 import * as _ from 'lodash';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-root',
@@ -18,6 +19,7 @@ export class AppComponent implements OnInit{
     stateSelected: string;
     @ViewChild('map') mapElement: any;
     map: google.maps.Map;
+    private markers: google.maps.Marker[];
 
     constructor(
         public apiService: APIService
@@ -28,6 +30,7 @@ export class AppComponent implements OnInit{
     ngOnInit():void {
         this.cityPromise = this.apiService.getCities().toPromise();
         this.initialSetup();
+        this.markers = [];
     }
 
     async initialSetup() {
@@ -55,8 +58,72 @@ export class AppComponent implements OnInit{
             mapTypeControl: false,
             streetViewControl: false,
         }
-        debugger;
         this.map = new google.maps.Map(this.mapElement.nativeElement, mapProperties);
     }
 
+    public async onStateSelection() {
+        // console.log("State selected: " + this.stateSelected);
+        this.clearMarkers();
+        let state = this.stateSelected;
+        let cities = this.stateCityMapping[this.stateSelected].slice(0,5);
+        console.log(cities);
+
+        for (let i=0; i<cities.length; i++) {
+            let city = cities[i];
+            if (city.geometry) {
+                this.dropMarkerOnMap(city.geometry, city.City);
+            } else {
+                this.asyncDropMarkerOnMap(city, state);
+            }
+        }
+    }
+
+    private dropMarkerOnMap(geometry: google.maps.GeocoderGeometry, title: string) {
+        this.markers.push(new google.maps.Marker({
+            title: title,
+            position: geometry.location.toJSON(),
+            map: this.map,
+            animation: google.maps.Animation.DROP
+        }))
+    }
+
+    private async asyncDropMarkerOnMap(city: CityModel, state: string) {
+        let address = city.City + ", " + state + ", " + "India";
+        let result = await this.apiService.geoCode({
+            key: environment.API_KEY,
+            address: address,
+            region: "in"
+        }).toPromise();
+
+        if (!result) {
+            console.error("Unable to geocode");
+            return;
+        }
+        city.geometry = result;
+        if (state == this.stateSelected) this.dropMarkerOnMap(result, city.City);
+    }
+    // private drop() {
+    //     this.clearMarkers();
+    //     for (var i = 0; i < this.markers.length; i++) {
+    //       this.addMarkerWithTimeout(this.markers[i], i * 200);
+    //     }
+    // }
+
+    // private addMarkerWithTimeout(position, timeout) {
+    //     window.setTimeout(function() {
+    //         this.markers.push(new google.maps.Marker({
+    //             title: "dummy",
+    //             position: position,
+    //             map: this.map,
+    //             animation: google.maps.Animation.DROP
+    //         }));
+    //     }, timeout);
+    // }
+
+    private clearMarkers() {
+        for (var i = 0; i < this.markers.length; i++) {
+          this.markers[i].setMap(null);
+        }
+        this.markers = [];
+    }
 }
