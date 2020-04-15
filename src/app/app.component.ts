@@ -67,14 +67,12 @@ export class AppComponent implements OnInit{
         }
         this.map = new google.maps.Map(this.mapElement.nativeElement, mapProperties);
         google.maps.event.addListenerOnce(this.map, 'idle', ()=>{
-            debugger;
             this.defaultZoomBound = this.map.getBounds();
             this.zoomBound = this.defaultZoomBound;
         })
     }
 
     public async onStateSelection() {
-        debugger;
         this.clearMarkers();
         this.map.fitBounds(this.defaultZoomBound);
         let state = this.stateSelected;
