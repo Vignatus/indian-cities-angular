@@ -42,7 +42,7 @@ export class AppComponent implements OnInit{
 
     async initialSetup() {
         let cities = await this.cityPromise;
-        // console.log(this.cities);
+        // To remove * from the end of Union Territories
         let unionTerritory = /\*$/;
         for(let city of cities) {
             if (unionTerritory.test(city.State)) {
@@ -76,22 +76,19 @@ export class AppComponent implements OnInit{
         this.clearMarkers();
         this.map.fitBounds(this.defaultZoomBound);
         let state = this.stateSelected;
-        let cities = this.stateCityMapping[this.stateSelected].slice(0,5);
-        console.log(cities);
+        let cities = this.stateCityMapping[this.stateSelected];
 
         for (let i=0; i<cities.length; i++) {
             let city = cities[i];
             if (city.geometry) {
-                this.dropMarkerOnMap(city.geometry, city.City);
+                this.dropMarkerOnMap(city.geometry, city.City, cities.length-1 == i);
             } else {
-                if (state == this.stateSelected) await this.asyncDropMarkerOnMap(city, state);
+                this.asyncDropMarkerOnMap(city, state, cities.length-1 == i);
             }
         }
-
-        if (state == this.stateSelected) this.recaliberateZoom();
     }
 
-    private async asyncDropMarkerOnMap(city: CityModel, state: string) {
+    private async asyncDropMarkerOnMap(city: CityModel, state: string, isLast: boolean) {
         let address = city.City + ", " + state + ", " + "India";
         let result = await this.apiService.geoCode({
             key: environment.API_KEY,
@@ -101,56 +98,44 @@ export class AppComponent implements OnInit{
 
         if (!result) {
             console.error("Unable to geocode");
-            return;
         }
         city.geometry = result;
-        if (state == this.stateSelected) this.dropMarkerOnMap(result, city.City);
+        if (state == this.stateSelected) this.dropMarkerOnMap(result, city.City, isLast);
     }
 
-    private dropMarkerOnMap(geometry: google.maps.GeocoderGeometry, title: string) {
-        let marker = new google.maps.Marker({
-            title: title,
-            position: geometry.location.toJSON(),
-            map: this.map,
-            animation: google.maps.Animation.DROP
-        });
-        let markerBound:MarkerBound = {
-            marker: marker,
-            zoomBound: geometry.viewport
+    private dropMarkerOnMap(geometry: google.maps.GeocoderGeometry | null, title: string, isLast: boolean) {
+        if (geometry) {
+            let marker = new google.maps.Marker({
+                title: title,
+                position: geometry.location.toJSON(),
+                map: this.map,
+                animation: google.maps.Animation.DROP
+            });
+            let markerBound:MarkerBound = {
+                marker: marker,
+                zoomBound: geometry.viewport
+            }
+            this.markerBounds.push(markerBound);
         }
-        this.markerBounds.push(markerBound);
+        console.log("isLast: " + isLast + " Array length: " + this.markerBounds.length);
+        if (isLast) window.setTimeout(this.recaliberateZoom, 300, this);
     }
 
-    private recaliberateZoom() {
-        for (let i=0; i<this.markerBounds.length; i++) {
-            let markerBound = this.markerBounds[i];
+    private recaliberateZoom(that?: this) {
+        that = that ? that : this;
+        for (let i=0; i<that.markerBounds.length; i++) {
+            let markerBound = that.markerBounds[i];
             if (i==0) {
-                this.zoomBound = markerBound.zoomBound;
+                that.zoomBound = markerBound.zoomBound;
                 continue;
 
             }
-            this.zoomBound.extend(markerBound.zoomBound.getSouthWest());
-            this.zoomBound.extend(markerBound.zoomBound.getNorthEast());
+            that.zoomBound.extend(markerBound.zoomBound.getSouthWest());
+            that.zoomBound.extend(markerBound.zoomBound.getNorthEast());
         }
-        this.map.fitBounds(this.zoomBound);
+        that.map.fitBounds(that.zoomBound);
     }
-    // private drop() {
-    //     this.clearMarkers();
-    //     for (var i = 0; i < this.markers.length; i++) {
-    //       this.addMarkerWithTimeout(this.markers[i], i * 200);
-    //     }
-    // }
 
-    // private addMarkerWithTimeout(position, timeout) {
-    //     window.setTimeout(function() {
-    //         this.markers.push(new google.maps.Marker({
-    //             title: "dummy",
-    //             position: position,
-    //             map: this.map,
-    //             animation: google.maps.Animation.DROP
-    //         }));
-    //     }, timeout);
-    // }
     private clearMarkers() {
         for (var i = 0; i < this.markerBounds.length; i++) {
           this.markerBounds[i].marker.setMap(null);
