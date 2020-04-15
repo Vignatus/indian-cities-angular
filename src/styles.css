@@ -1,1 +1,9 @@
 /* You can add global styles to this file, and also import other style files */
+@import '~bootstrap/dist/css/bootstrap.css';
+
+html, body { height: 100%; }
+body { padding: 30px 24px; font-family: Roboto, "Helvetica Neue", sans-serif; }
+ul, ol {
+    list-style-type: none;
+    padding-inline-start: 0;
+}
